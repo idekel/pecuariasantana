@@ -20,4 +20,9 @@ class UnauthorizedProjectActionException extends RuntimeException
     {
         return new self('The user does not have access to record yields for this project.');
     }
+
+    public static function manageYields(): self
+    {
+        return new self('The user does not have access to manage yields for this project.');
+    }
 }

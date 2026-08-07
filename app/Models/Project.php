@@ -115,4 +115,37 @@ class Project extends Model
             'produced_on' => $producedOn,
         ]);
     }
+
+    /**
+     * Update an existing yield belonging to this project, on behalf of a user with access to it.
+     */
+    public function updateYield(YieldRecord $yield, User $user, int|float $quantity, DateTimeInterface|string $producedOn): YieldRecord
+    {
+        if (! $this->hasAccess($user)) {
+            throw UnauthorizedProjectActionException::manageYields();
+        }
+
+        if (! $this->type->isValidYieldQuantity($quantity)) {
+            throw InvalidYieldQuantityException::forProjectType($this->type, $quantity);
+        }
+
+        $yield->update([
+            'quantity' => $quantity,
+            'produced_on' => $producedOn,
+        ]);
+
+        return $yield;
+    }
+
+    /**
+     * Delete an existing yield belonging to this project, on behalf of a user with access to it.
+     */
+    public function deleteYield(YieldRecord $yield, User $user): void
+    {
+        if (! $this->hasAccess($user)) {
+            throw UnauthorizedProjectActionException::manageYields();
+        }
+
+        $yield->delete();
+    }
 }
