@@ -37,6 +37,45 @@ class YieldControllerTest extends TestCase
         $response->assertForbidden();
     }
 
+    public function test_user_with_access_can_get_yield_summary_for_a_date_range(): void
+    {
+        $owner = User::factory()->create();
+        $project = Project::factory()->for($owner, 'owner')->hens()->create();
+        YieldRecord::factory()->for($project)->create(['quantity' => 10, 'produced_on' => '2026-08-01']);
+        YieldRecord::factory()->for($project)->create(['quantity' => 5, 'produced_on' => '2026-08-05']);
+        YieldRecord::factory()->for($project)->create(['quantity' => 100, 'produced_on' => '2026-07-01']);
+        Sanctum::actingAs($owner);
+
+        $response = $this->getJson("/api/projects/{$project->id}/yields/summary?start_date=2026-08-01&end_date=2026-08-06");
+
+        $response->assertOk()
+            ->assertJsonPath('total', 15)
+            ->assertJsonPath('unit', 'eggs');
+    }
+
+    public function test_user_without_access_cannot_get_yield_summary(): void
+    {
+        $owner = User::factory()->create();
+        $stranger = User::factory()->create();
+        $project = Project::factory()->for($owner, 'owner')->create();
+        Sanctum::actingAs($stranger);
+
+        $response = $this->getJson("/api/projects/{$project->id}/yields/summary?start_date=2026-08-01&end_date=2026-08-06");
+
+        $response->assertForbidden();
+    }
+
+    public function test_yield_summary_requires_start_and_end_date(): void
+    {
+        $owner = User::factory()->create();
+        $project = Project::factory()->for($owner, 'owner')->create();
+        Sanctum::actingAs($owner);
+
+        $response = $this->getJson("/api/projects/{$project->id}/yields/summary");
+
+        $response->assertUnprocessable()->assertJsonValidationErrors(['start_date', 'end_date']);
+    }
+
     public function test_user_with_access_can_record_a_yield(): void
     {
         $owner = User::factory()->create();

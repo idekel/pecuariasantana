@@ -32,6 +32,31 @@ class YieldController extends Controller
     }
 
     /**
+     * Sum the yields recorded for a project within a date range.
+     */
+    public function summary(Request $request, Project $project): JsonResponse
+    {
+        abort_unless($project->hasAccess($request->user()), 403);
+
+        $data = $request->validate([
+            'start_date' => ['required', 'date'],
+            'end_date' => ['required', 'date', 'after_or_equal:start_date'],
+        ]);
+
+        $total = $project->yields()
+            ->whereBetween('produced_on', [$data['start_date'], $data['end_date']])
+            ->sum('quantity');
+
+        return response()->json([
+            'project_id' => $project->id,
+            'start_date' => $data['start_date'],
+            'end_date' => $data['end_date'],
+            'unit' => $project->type->yieldUnit(),
+            'total' => $total,
+        ]);
+    }
+
+    /**
      * Record a new yield for a project.
      */
     public function store(Request $request, Project $project): JsonResponse

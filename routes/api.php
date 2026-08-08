@@ -12,5 +12,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/projects', [ProjectController::class, 'index']);
 
+    Route::get('/projects/{project}/yields/summary', [YieldController::class, 'summary']);
     Route::apiResource('projects.yields', YieldController::class)->shallow();
 });
