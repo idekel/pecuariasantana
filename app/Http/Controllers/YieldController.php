@@ -52,7 +52,7 @@ class YieldController extends Controller
             'start_date' => $data['start_date'],
             'end_date' => $data['end_date'],
             'unit' => $project->type->yieldUnit(),
-            'total' => $total,
+            'total' => sprintf('%0.2f', $total),
         ]);
     }
 
