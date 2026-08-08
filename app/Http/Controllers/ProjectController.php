@@ -19,10 +19,6 @@ class ProjectController extends Controller
         $projects = Project::query()
             ->where('user_id', $user->id)
             ->orWhereHas('collaborators', fn ($query) => $query->whereKey($user->id))
-            ->withCount(['yields as current_month_yields_count' => function ($query) {
-                $query->whereYear('produced_on', now()->year)
-                    ->whereMonth('produced_on', now()->month);
-            }])
             ->latest()
             ->get();
 
