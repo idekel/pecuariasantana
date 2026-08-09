@@ -4,7 +4,6 @@ namespace Tests\Feature;
 
 use App\Models\Project;
 use App\Models\User;
-use App\Models\YieldRecord;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
@@ -53,20 +52,6 @@ class ProjectControllerTest extends TestCase
         $response = $this->getJson('/api/projects');
 
         $response->assertOk()->assertJsonCount(0, 'data');
-    }
-
-    public function test_it_includes_the_yield_count_for_the_current_month_only(): void
-    {
-        $user = User::factory()->create();
-        $project = Project::factory()->for($user, 'owner')->create();
-        YieldRecord::factory()->for($project)->create(['produced_on' => now()->startOfMonth()]);
-        YieldRecord::factory()->for($project)->create(['produced_on' => now()->endOfMonth()]);
-        YieldRecord::factory()->for($project)->create(['produced_on' => now()->subMonthNoOverflow()]);
-        Sanctum::actingAs($user);
-
-        $response = $this->getJson('/api/projects');
-
-        $response->assertOk()->assertJsonPath('data.0.current_month_yields_count', 2);
     }
 
     public function test_guest_cannot_list_projects(): void

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\ProjectType;
 use App\Exceptions\CannotGrantAccessToOwnerException;
+use App\Exceptions\InvalidSaleQuantityException;
 use App\Exceptions\InvalidYieldQuantityException;
 use App\Exceptions\UnauthorizedProjectActionException;
 use Database\Factories\ProjectFactory;
@@ -49,6 +50,11 @@ class Project extends Model
     public function yields(): HasMany
     {
         return $this->hasMany(YieldRecord::class);
+    }
+
+    public function sales(): HasMany
+    {
+        return $this->hasMany(Sale::class);
     }
 
     public function isOwnedBy(User $user): bool
@@ -147,5 +153,26 @@ class Project extends Model
         }
 
         $yield->delete();
+    }
+
+    /**
+     * Record a sale for this project on behalf of a user with access to it.
+     */
+    public function recordSale(User $user, int|float $quantity, int|float $amount, DateTimeInterface|string $soldOn): Sale
+    {
+        if (! $this->hasAccess($user)) {
+            throw UnauthorizedProjectActionException::recordSale();
+        }
+
+        if (! $this->type->isValidYieldQuantity($quantity)) {
+            throw InvalidSaleQuantityException::forProjectType($this->type, $quantity);
+        }
+
+        return $this->sales()->create([
+            'user_id' => $user->id,
+            'quantity' => $quantity,
+            'amount' => $amount,
+            'sold_on' => $soldOn,
+        ]);
     }
 }

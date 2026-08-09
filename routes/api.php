@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\SaleController;
 use App\Http\Controllers\YieldController;
 use Illuminate\Support\Facades\Route;
 
@@ -14,4 +15,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/projects/{project}/yields/summary', [YieldController::class, 'summary']);
     Route::apiResource('projects.yields', YieldController::class)->shallow();
+
+    Route::get('/projects/{project}/sales', [SaleController::class, 'index']);
+    Route::post('/projects/{project}/sales', [SaleController::class, 'store']);
 });

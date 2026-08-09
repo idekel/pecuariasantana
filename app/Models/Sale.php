@@ -2,18 +2,16 @@
 
 namespace App\Models;
 
-use Database\Factories\YieldRecordFactory;
+use Database\Factories\SaleFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
-use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Table('yields')]
-#[Fillable(['user_id', 'quantity', 'produced_on'])]
-class YieldRecord extends Model
+#[Fillable(['user_id', 'quantity', 'amount', 'sold_on'])]
+class Sale extends Model
 {
-    /** @use HasFactory<YieldRecordFactory> */
+    /** @use HasFactory<SaleFactory> */
     use HasFactory;
 
     /**
@@ -25,7 +23,8 @@ class YieldRecord extends Model
     {
         return [
             'quantity' => 'float',
-            'produced_on' => 'date:Y-m-d',
+            'amount' => 'float',
+            'sold_on' => 'date:Y-m-d',
         ];
     }
 
@@ -40,7 +39,7 @@ class YieldRecord extends Model
     }
 
     /**
-     * The unit this yield is measured in, derived from its project's type.
+     * The unit this sale is measured in, derived from its project's type.
      */
     public function unit(): string
     {

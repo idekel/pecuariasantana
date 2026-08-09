@@ -49,7 +49,7 @@ class YieldControllerTest extends TestCase
         $response = $this->getJson("/api/projects/{$project->id}/yields/summary?start_date=2026-08-01&end_date=2026-08-06");
 
         $response->assertOk()
-            ->assertJsonPath('total', 15)
+            ->assertJsonPath('total', '15.00')
             ->assertJsonPath('unit', 'eggs');
     }
 

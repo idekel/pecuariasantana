@@ -4,9 +4,11 @@ namespace Tests\Unit\Models;
 
 use App\Enums\ProjectType;
 use App\Exceptions\CannotGrantAccessToOwnerException;
+use App\Exceptions\InvalidSaleQuantityException;
 use App\Exceptions\InvalidYieldQuantityException;
 use App\Exceptions\UnauthorizedProjectActionException;
 use App\Models\Project;
+use App\Models\Sale;
 use App\Models\User;
 use App\Models\YieldRecord;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -196,6 +198,57 @@ class ProjectTest extends TestCase
         $this->expectException(InvalidYieldQuantityException::class);
 
         $project->recordYield($owner, -5, '2026-08-06');
+    }
+
+    public function test_owner_can_record_a_sale(): void
+    {
+        $owner = User::factory()->create();
+        $project = Project::factory()->for($owner, 'owner')->hens()->create();
+
+        $sale = $project->recordSale($owner, 12, 6.50, '2026-08-06');
+
+        $this->assertInstanceOf(Sale::class, $sale);
+        $this->assertDatabaseHas('sales', [
+            'project_id' => $project->id,
+            'user_id' => $owner->id,
+            'quantity' => 12,
+            'amount' => 6.5,
+            'sold_on' => '2026-08-06',
+        ]);
+    }
+
+    public function test_collaborator_with_access_can_record_a_sale(): void
+    {
+        $owner = User::factory()->create();
+        $collaborator = User::factory()->create();
+        $project = Project::factory()->for($owner, 'owner')->meatChickens()->create();
+        $project->grantAccessTo($collaborator, $owner);
+
+        $sale = $project->recordSale($collaborator, 45.5, 120, '2026-08-06');
+
+        $this->assertSame($collaborator->id, $sale->user_id);
+        $this->assertEquals(45.5, $sale->quantity);
+    }
+
+    public function test_user_without_access_cannot_record_a_sale(): void
+    {
+        $owner = User::factory()->create();
+        $stranger = User::factory()->create();
+        $project = Project::factory()->for($owner, 'owner')->hens()->create();
+
+        $this->expectException(UnauthorizedProjectActionException::class);
+
+        $project->recordSale($stranger, 12, 6.50, '2026-08-06');
+    }
+
+    public function test_hens_project_rejects_fractional_egg_counts_for_sales(): void
+    {
+        $owner = User::factory()->create();
+        $project = Project::factory()->for($owner, 'owner')->hens()->create();
+
+        $this->expectException(InvalidSaleQuantityException::class);
+
+        $project->recordSale($owner, 12.5, 6.50, '2026-08-06');
     }
 
     public function test_project_type_is_cast_to_an_enum(): void
