@@ -7,6 +7,8 @@ use App\Exceptions\CannotGrantAccessToOwnerException;
 use App\Exceptions\InvalidSaleQuantityException;
 use App\Exceptions\InvalidYieldQuantityException;
 use App\Exceptions\UnauthorizedProjectActionException;
+use App\Notifications\SaleRecordedNotification;
+use App\Notifications\YieldRecordedNotification;
 use Database\Factories\ProjectFactory;
 use DateTimeInterface;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -115,11 +117,15 @@ class Project extends Model
             throw InvalidYieldQuantityException::forProjectType($this->type, $quantity);
         }
 
-        return $this->yields()->create([
+        $yield = $this->yields()->create([
             'user_id' => $user->id,
             'quantity' => $quantity,
             'produced_on' => $producedOn,
         ]);
+
+        $this->owner->notify(new YieldRecordedNotification($this, $yield));
+
+        return $yield;
     }
 
     /**
@@ -168,11 +174,15 @@ class Project extends Model
             throw InvalidSaleQuantityException::forProjectType($this->type, $quantity);
         }
 
-        return $this->sales()->create([
+        $sale = $this->sales()->create([
             'user_id' => $user->id,
             'quantity' => $quantity,
             'amount' => $amount,
             'sold_on' => $soldOn,
         ]);
+
+        $this->owner->notify(new SaleRecordedNotification($this, $sale));
+
+        return $sale;
     }
 }

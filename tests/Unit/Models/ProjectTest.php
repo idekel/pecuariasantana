@@ -11,7 +11,10 @@ use App\Models\Project;
 use App\Models\Sale;
 use App\Models\User;
 use App\Models\YieldRecord;
+use App\Notifications\SaleRecordedNotification;
+use App\Notifications\YieldRecordedNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
 class ProjectTest extends TestCase
@@ -146,6 +149,35 @@ class ProjectTest extends TestCase
         ]);
     }
 
+    public function test_recording_a_yield_notifies_the_owner_by_email(): void
+    {
+        Notification::fake();
+        $owner = User::factory()->create();
+        $project = Project::factory()->for($owner, 'owner')->hens()->create();
+
+        $yield = $project->recordYield($owner, 12, '2026-08-06');
+
+        Notification::assertSentTo(
+            $owner,
+            YieldRecordedNotification::class,
+            fn ($notification) => $notification->yield->is($yield)
+        );
+    }
+
+    public function test_recording_a_yield_by_a_collaborator_still_notifies_the_owner(): void
+    {
+        Notification::fake();
+        $owner = User::factory()->create();
+        $collaborator = User::factory()->create();
+        $project = Project::factory()->for($owner, 'owner')->meatChickens()->create();
+        $project->grantAccessTo($collaborator, $owner);
+
+        $project->recordYield($collaborator, 45.5, '2026-08-06');
+
+        Notification::assertSentTo($owner, YieldRecordedNotification::class);
+        Notification::assertNotSentTo($collaborator, YieldRecordedNotification::class);
+    }
+
     public function test_collaborator_with_access_can_record_a_yield(): void
     {
         $owner = User::factory()->create();
@@ -215,6 +247,35 @@ class ProjectTest extends TestCase
             'amount' => 6.5,
             'sold_on' => '2026-08-06',
         ]);
+    }
+
+    public function test_recording_a_sale_notifies_the_owner_by_email(): void
+    {
+        Notification::fake();
+        $owner = User::factory()->create();
+        $project = Project::factory()->for($owner, 'owner')->hens()->create();
+
+        $sale = $project->recordSale($owner, 12, 6.50, '2026-08-06');
+
+        Notification::assertSentTo(
+            $owner,
+            SaleRecordedNotification::class,
+            fn ($notification) => $notification->sale->is($sale)
+        );
+    }
+
+    public function test_recording_a_sale_by_a_collaborator_still_notifies_the_owner(): void
+    {
+        Notification::fake();
+        $owner = User::factory()->create();
+        $collaborator = User::factory()->create();
+        $project = Project::factory()->for($owner, 'owner')->meatChickens()->create();
+        $project->grantAccessTo($collaborator, $owner);
+
+        $project->recordSale($collaborator, 45.5, 120, '2026-08-06');
+
+        Notification::assertSentTo($owner, SaleRecordedNotification::class);
+        Notification::assertNotSentTo($collaborator, SaleRecordedNotification::class);
     }
 
     public function test_collaborator_with_access_can_record_a_sale(): void
