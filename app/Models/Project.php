@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\ExpenseType;
 use App\Enums\ProjectType;
 use App\Exceptions\CannotGrantAccessToOwnerException;
 use App\Exceptions\InvalidSaleQuantityException;
@@ -57,6 +58,11 @@ class Project extends Model
     public function sales(): HasMany
     {
         return $this->hasMany(Sale::class);
+    }
+
+    public function expenses(): HasMany
+    {
+        return $this->hasMany(Expense::class);
     }
 
     public function isOwnedBy(User $user): bool
@@ -184,5 +190,22 @@ class Project extends Model
         $this->owner->notify(new SaleRecordedNotification($this, $sale));
 
         return $sale;
+    }
+
+    /**
+     * Record an expense for this project on behalf of a user with access to it.
+     */
+    public function recordExpense(User $user, int|float $amount, ExpenseType|string $type, DateTimeInterface|string $incurredOn): Expense
+    {
+        if (! $this->hasAccess($user)) {
+            throw UnauthorizedProjectActionException::recordExpense();
+        }
+
+        return $this->expenses()->create([
+            'user_id' => $user->id,
+            'amount' => $amount,
+            'type' => $type,
+            'incurred_on' => $incurredOn,
+        ]);
     }
 }

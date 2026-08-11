@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\SaleController;
 use App\Http\Controllers\YieldController;
@@ -18,4 +19,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/projects/{project}/sales', [SaleController::class, 'index']);
     Route::post('/projects/{project}/sales', [SaleController::class, 'store']);
+
+    Route::get('/projects/{project}/expenses', [ExpenseController::class, 'index']);
+    Route::post('/projects/{project}/expenses', [ExpenseController::class, 'store']);
 });

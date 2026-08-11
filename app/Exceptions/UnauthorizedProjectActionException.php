@@ -26,6 +26,11 @@ class UnauthorizedProjectActionException extends RuntimeException
         return new self('The user does not have access to record sales for this project.');
     }
 
+    public static function recordExpense(): self
+    {
+        return new self('The user does not have access to record expenses for this project.');
+    }
+
     public static function manageYields(): self
     {
         return new self('The user does not have access to manage yields for this project.');

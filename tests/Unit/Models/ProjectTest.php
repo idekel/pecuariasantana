@@ -2,11 +2,13 @@
 
 namespace Tests\Unit\Models;
 
+use App\Enums\ExpenseType;
 use App\Enums\ProjectType;
 use App\Exceptions\CannotGrantAccessToOwnerException;
 use App\Exceptions\InvalidSaleQuantityException;
 use App\Exceptions\InvalidYieldQuantityException;
 use App\Exceptions\UnauthorizedProjectActionException;
+use App\Models\Expense;
 use App\Models\Project;
 use App\Models\Sale;
 use App\Models\User;
@@ -317,5 +319,46 @@ class ProjectTest extends TestCase
         $project = Project::factory()->hens()->create();
 
         $this->assertSame(ProjectType::Hens, $project->type);
+    }
+
+    public function test_owner_can_record_an_expense(): void
+    {
+        $owner = User::factory()->create();
+        $project = Project::factory()->for($owner, 'owner')->create();
+
+        $expense = $project->recordExpense($owner, 150.75, ExpenseType::Feed, '2026-08-06');
+
+        $this->assertInstanceOf(Expense::class, $expense);
+        $this->assertDatabaseHas('expenses', [
+            'project_id' => $project->id,
+            'user_id' => $owner->id,
+            'amount' => 150.75,
+            'type' => 'feed',
+            'incurred_on' => '2026-08-06',
+        ]);
+    }
+
+    public function test_collaborator_with_access_can_record_an_expense(): void
+    {
+        $owner = User::factory()->create();
+        $collaborator = User::factory()->create();
+        $project = Project::factory()->for($owner, 'owner')->create();
+        $project->grantAccessTo($collaborator, $owner);
+
+        $expense = $project->recordExpense($collaborator, 50, ExpenseType::Equipment, '2026-08-06');
+
+        $this->assertSame($collaborator->id, $expense->user_id);
+        $this->assertSame(ExpenseType::Equipment, $expense->type);
+    }
+
+    public function test_user_without_access_cannot_record_an_expense(): void
+    {
+        $owner = User::factory()->create();
+        $stranger = User::factory()->create();
+        $project = Project::factory()->for($owner, 'owner')->create();
+
+        $this->expectException(UnauthorizedProjectActionException::class);
+
+        $project->recordExpense($stranger, 50, ExpenseType::Other, '2026-08-06');
     }
 }
