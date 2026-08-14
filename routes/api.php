@@ -13,6 +13,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
 
     Route::get('/projects', [ProjectController::class, 'index']);
+    Route::get('/projects/{project}/balance', [ProjectController::class, 'balance']);
 
     Route::get('/projects/{project}/yields/summary', [YieldController::class, 'summary']);
     Route::apiResource('projects.yields', YieldController::class)->shallow();
